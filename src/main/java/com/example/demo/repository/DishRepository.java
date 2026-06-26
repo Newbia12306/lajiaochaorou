@@ -24,6 +24,8 @@ public interface DishRepository extends JpaRepository<Dish,Long> {
     Page<Dish>findAllOrderBySignature(Pageable pageable);
 
     List<Dish> findByIsDeletedFalse();
+    
+    List<Dish> findByIsSignatureTrueAndIsDeletedFalse();
 
 }
 

@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -36,7 +38,8 @@ public class SecurityConfig {
                         // 公开接口
                         .requestMatchers("/api/auth/**").permitAll()  // 所有认证相关接口都公开
                         .requestMatchers("/api/recommendations/**").permitAll()  // 推荐接口公开
-                        .requestMatchers("/api/dishes/**").permitAll()  // 菜品接口公开（可选）
+                        .requestMatchers("/api/dishes/**").permitAll()  // 菜品接口公开（菜单浏览）
+                        .requestMatchers("/api/llm/**").authenticated()  // LLM接口需要登录（个性化推荐）
 
                         .requestMatchers("/login.html", "/register.html").permitAll()
                         // 静态资源
@@ -54,6 +57,11 @@ public class SecurityConfig {
         return http.build();
     }
 
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     // 配置跨域规则：允许前端域名、请求方法、请求头
     @Bean

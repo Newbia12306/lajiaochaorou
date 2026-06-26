@@ -1,0 +1,21 @@
+# 后端项目 - SonarQube 配置
+sonar.projectKey=demo-backend
+sonar.projectName=后端项目 (demo-backend)
+sonar.projectVersion=1.0
+
+# 源代码目录
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+
+# Java 编译输出目录
+sonar.java.binaries=target/classes
+sonar.java.test.binaries=target/test-classes
+
+# 语言
+sonar.language=java
+sonar.sourceEncoding=UTF-8
+
+# SonarQube 服务
+sonar.host.url=http://localhost:9000
+# ⚠️ 请将下面的 token 替换为你自己的 SonarQube token
+sonar.token=YOUR_SONARQUBE_TOKEN_HERE

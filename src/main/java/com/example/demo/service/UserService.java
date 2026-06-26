@@ -6,6 +6,7 @@ import com.example.demo.DTO.AuthResponse;
 import com.example.demo.model.Users;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
@@ -19,6 +20,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public AuthResponse registerUser(RegisterRequest request) {
         // 1. 手机号格式验证
@@ -42,10 +46,10 @@ public class UserService {
         }
 
         try {
-            // 5. 创建用户
+            // 5. 创建用户（密码加密存储）
             Users user = new Users();
             user.setId(request.getMobileNumber());
-            user.setPassword(request.getPassword());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
 
             Users savedUser = userRepository.save(user);
 
@@ -76,8 +80,24 @@ public class UserService {
             }
             Users user = userOptional.get();
 
-            // 4. 验证密码
-            if (!user.getPassword().equals(request.getPassword())) {
+            // 4. 验证密码（BCrypt + 旧密码兼容）
+            boolean passwordMatch = false;
+            String storedPassword = user.getPassword();
+
+            // BCrypt 哈希密码以 $2a$ 开头
+            if (storedPassword.startsWith("$2a$")) {
+                passwordMatch = passwordEncoder.matches(request.getPassword(), storedPassword);
+            } else {
+                // 兼容旧明文密码：比较后自动升级为 BCrypt
+                if (storedPassword.equals(request.getPassword())) {
+                    passwordMatch = true;
+                    user.setPassword(passwordEncoder.encode(request.getPassword()));
+                    userRepository.save(user);
+                    System.out.println("已为用户 " + user.getId() + " 升级密码为 BCrypt 加密");
+                }
+            }
+
+            if (!passwordMatch) {
                 return AuthResponse.error("密码错误");
             }
 

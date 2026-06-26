@@ -34,3 +34,6 @@ build/
 
 # Environment variables (重要！防止泄露密码)
 .env
+
+# SonarQube (contains token)
+sonar-project.properties

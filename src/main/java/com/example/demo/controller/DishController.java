@@ -55,8 +55,22 @@ public class DishController {
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
-
-
+    @GetMapping("/signature")
+    public ResponseEntity<?> getSignatureDishes(){
+        try{
+            List<Dish> signatureDishes = dishService.getSignatureDishes();
+            Map<String,Object> response = new HashMap<>();
+            response.put("data",signatureDishes);
+            response.put("total",signatureDishes.size());
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            Map<String,Object> errorResponse = Map.of(
+                    "error",true,
+                    "message","获取招牌菜失败: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
 
     @PostMapping
     public ResponseEntity<String> create(@RequestBody Map<String,Object> request) {

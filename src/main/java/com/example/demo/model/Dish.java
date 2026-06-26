@@ -28,6 +28,9 @@ public class Dish{
     @Column(name = "is_deleted",nullable = false)
     private Boolean isDeleted = false;
 
+    @Column(columnDefinition = "vector(384)")
+    private float[] embedding;
+
     public enum SpicyLevel{
         NOT_SPICY("不辣"),
         MEDIUM_SPICY("中辣"),
@@ -60,7 +63,8 @@ public class Dish{
     public Boolean getIsDeleted() { return isDeleted; }
     public void setIsDeleted(Boolean idDeleted) { this.isDeleted = idDeleted; }
 
-
+    public float[] getEmbedding() { return embedding; }
+    public void setEmbedding(float[] embedding) { this.embedding = embedding; }
 
 
     // 无参构造函数
