@@ -26,10 +26,13 @@ jobs:
           cache: maven
 
       - name: Build, test & JaCoCo coverage
-        run: ./mvnw verify -Dmaven.test.failure.ignore=false
+        run: |
+          chmod +x mvnw
+          ./mvnw verify -Dmaven.test.failure.ignore=false
 
       - name: SonarCloud Scan
         run: |
+          chmod +x mvnw
           ./mvnw sonar:sonar \
             -Dsonar.organization=newbia12306 \
             -Dsonar.projectKey=lajiaochaorou-backend \
