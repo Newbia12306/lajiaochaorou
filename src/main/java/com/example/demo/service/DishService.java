@@ -189,4 +189,27 @@ public class DishService {
     private void clearSignatureDishesCache() {
         redisTemplate.delete(SIGNATURE_DISHES_CACHE_KEY);
     }
+
+    /**
+     * 根据菜名模糊搜索（新增功能，未编写测试）
+     */
+    public List<Dish> searchByNameKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+        String cacheKey = "dish_search:" + keyword.toLowerCase();
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Dish> result = (List<Dish>) cached;
+            if (!result.isEmpty()) {
+                return result;
+            }
+        }
+        List<Dish> dishes = dishRepository.findByNameContainingIgnoreCase(keyword);
+        if (dishes != null && !dishes.isEmpty()) {
+            redisTemplate.opsForValue().set(cacheKey, dishes, 10, TimeUnit.MINUTES);
+        }
+        return dishes != null ? dishes : Collections.emptyList();
+    }
 }
