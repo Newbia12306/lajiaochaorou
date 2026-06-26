@@ -212,4 +212,27 @@ public class DishService {
         }
         return dishes != null ? dishes : Collections.emptyList();
     }
+
+    /**
+     * 根据价格范围过滤菜品（新增功能，未编写测试）
+     */
+    public List<Dish> searchByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+        if (minPrice == null || maxPrice == null || minPrice.compareTo(maxPrice) > 0) {
+            return Collections.emptyList();
+        }
+        String cacheKey = String.format("dish_price:%s-%s", minPrice.toPlainString(), maxPrice.toPlainString());
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Dish> result = (List<Dish>) cached;
+            if (!result.isEmpty()) {
+                return result;
+            }
+        }
+        List<Dish> dishes = dishRepository.findByPriceBetween(minPrice, maxPrice);
+        if (dishes != null && !dishes.isEmpty()) {
+            redisTemplate.opsForValue().set(cacheKey, dishes, 10, TimeUnit.MINUTES);
+        }
+        return dishes != null ? dishes : Collections.emptyList();
+    }
 }
