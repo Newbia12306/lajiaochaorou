@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.constants.ApiConstants;
 import com.example.demo.service.LlmService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,20 +10,22 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/llm")
-@CrossOrigin(origins = "*")
 public class LlmController {
 
-    @Autowired
-    private LlmService llmService;
+    private final LlmService llmService;
+
+    public LlmController(LlmService llmService) {
+        this.llmService = llmService;
+    }
 
     @PostMapping("/chat")
     public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, String> request) {
-        String message = request.getOrDefault("message", "");
+        String message = request.getOrDefault(ApiConstants.KEY_MESSAGE, "");
 
         Map<String, Object> chatResult = llmService.chat(message);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
+        result.put(ApiConstants.KEY_SUCCESS, true);
         result.put("response", chatResult.get("response"));
         result.put("dishes", chatResult.get("dishes"));
         return ResponseEntity.ok(result);
@@ -37,7 +39,7 @@ public class LlmController {
         String recommendation = llmService.recommendDishes(tastePreference, dietaryRestrictions);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
+        result.put(ApiConstants.KEY_SUCCESS, true);
         result.put("recommendation", recommendation);
         return ResponseEntity.ok(result);
     }
@@ -46,7 +48,7 @@ public class LlmController {
     public ResponseEntity<Map<String, Object>> getStatus() {
         Map<String, Object> result = new HashMap<>();
         result.put("llmConfigured", true);
-        result.put("message", "LLM 服务正常运行");
+        result.put(ApiConstants.KEY_MESSAGE, "LLM 服务正常运行");
         return ResponseEntity.ok(result);
     }
 }

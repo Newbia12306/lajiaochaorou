@@ -3,7 +3,6 @@ package com.example.demo.config;
 import com.example.demo.service.DataSyncService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -11,9 +10,11 @@ import org.springframework.stereotype.Component;
 public class DataSyncScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DataSyncScheduler.class);
+    private final DataSyncService dataSyncService;
 
-    @Autowired
-    private DataSyncService dataSyncService;
+    public DataSyncScheduler(DataSyncService dataSyncService) {
+        this.dataSyncService = dataSyncService;
+    }
 
     @Scheduled(fixedRate = 1800000)
     public void scheduleDataSync() {

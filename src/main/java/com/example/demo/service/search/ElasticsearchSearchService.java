@@ -3,7 +3,8 @@ package com.example.demo.service.search;
 import com.example.demo.model.Dish;
 import com.example.demo.model.DishDocument;
 import com.example.demo.repository.DishSearchRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -13,16 +14,23 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ElasticsearchSearchService {
 
-    @Autowired(required = false)
-    private ElasticsearchOperations elasticsearchOperations;
+    private static final Logger log = LoggerFactory.getLogger(ElasticsearchSearchService.class);
 
-    @Autowired(required = false)
-    private DishSearchRepository dishSearchRepository;
+    private final ElasticsearchOperations elasticsearchOperations;
+    private final DishSearchRepository dishSearchRepository;
+
+    public ElasticsearchSearchService(
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+            ElasticsearchOperations elasticsearchOperations,
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+            DishSearchRepository dishSearchRepository) {
+        this.elasticsearchOperations = elasticsearchOperations;
+        this.dishSearchRepository = dishSearchRepository;
+    }
 
     public List<Dish> search(String keywords, int limit) {
         if (keywords == null || keywords.trim().isEmpty()) {
@@ -45,18 +53,18 @@ public class ElasticsearchSearchService {
             return hits.getSearchHits().stream()
                     .map(SearchHit::getContent)
                     .map(this::convertToDish)
-                    .collect(Collectors.toList());
+                    .toList();
 
         } catch (Exception e) {
-            System.err.println("Elasticsearch搜索失败: " + e.getMessage());
+            log.error("Elasticsearch搜索失败: {}", e.getMessage(), e);
             return Collections.emptyList();
         }
     }
 
     public boolean isAvailable() {
         try {
-            return elasticsearchOperations != null && 
-                   elasticsearchOperations.indexOps(DishDocument.class).exists();
+            return elasticsearchOperations != null
+                    && elasticsearchOperations.indexOps(DishDocument.class).exists();
         } catch (Exception e) {
             return false;
         }
@@ -68,7 +76,7 @@ public class ElasticsearchSearchService {
 
     private Dish convertToDish(DishDocument doc) {
         Dish dish = new Dish();
-        dish.setId(Integer.parseInt(doc.getId()));
+        dish.setId(Long.valueOf(doc.getId()));
         dish.setName(doc.getName());
         if (doc.getSpicyLevel() != null) {
             dish.setSpicy(Dish.SpicyLevel.valueOf(doc.getSpicyLevel()));
