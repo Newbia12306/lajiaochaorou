@@ -1,6 +1,0 @@
-projectKey=menu-app-backend
-serverUrl=http://localhost:9000
-serverVersion=26.6.0.123539
-dashboardUrl=http://localhost:9000/dashboard?id=menu-app-backend
-ceTaskId=ec1e9a6d-b045-4d6e-8cf7-33104ca80bb6
-ceTaskUrl=http://localhost:9000/api/ce/task?id=ec1e9a6d-b045-4d6e-8cf7-33104ca80bb6
