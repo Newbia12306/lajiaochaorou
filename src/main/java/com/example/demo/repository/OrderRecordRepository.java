@@ -1,6 +1,6 @@
 package com.example.demo.repository;
 
-import com.example.demo.DTO.FrequentDishStats;
+import com.example.demo.dto.FrequentDishStats;
 import com.example.demo.model.OrderRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

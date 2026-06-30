@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
-import com.example.demo.DTO.RecommendationResponse;
-import com.example.demo.DTO.RecommendationResponse.DishRecommendation;
+import com.example.demo.dto.RecommendationResponse;
+import com.example.demo.dto.RecommendationResponse.DishRecommendation;
 import com.example.demo.enums.SearchEngineType;
 import com.example.demo.model.Dish;
 import com.example.demo.repository.DishRepository;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class RecommendationService {
@@ -146,7 +145,7 @@ public class RecommendationService {
                     recommendation.setRelevance(formatRelevance(score));
                     return recommendation;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         response.setRecommendations(recommendations);
         response.setMessage("使用 " + engineName + " 进行搜索");

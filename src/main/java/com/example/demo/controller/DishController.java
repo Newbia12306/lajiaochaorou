@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.constants.ApiConstants;
 import com.example.demo.model.Dish;
 import com.example.demo.service.DishService;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public class DishController {
         } catch (Exception e) {
             log.error("Failed to get dishes with pagination", e);
             return ResponseEntity.internalServerError().body(
-                    Map.of("error", true, "message", "获取菜品失败: " + e.getMessage()));
+                    Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "获取菜品失败: " + e.getMessage()));
         }
     }
 
@@ -48,7 +49,7 @@ public class DishController {
         } catch (Exception e) {
             log.error("Failed to get all dishes", e);
             return ResponseEntity.internalServerError().body(
-                    Map.of("error", true, "message", "获取菜品失败: " + e.getMessage()));
+                    Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "获取菜品失败: " + e.getMessage()));
         }
     }
 
@@ -63,7 +64,7 @@ public class DishController {
         } catch (Exception e) {
             log.error("Failed to get signature dishes", e);
             return ResponseEntity.internalServerError().body(
-                    Map.of("error", true, "message", "获取招牌菜失败: " + e.getMessage()));
+                    Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "获取招牌菜失败: " + e.getMessage()));
         }
     }
 
@@ -177,10 +178,10 @@ public class DishController {
             return ResponseEntity.ok(updatedDish);
 
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ApiConstants.KEY_ERROR, e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to update dish id={}", id, e);
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of(ApiConstants.KEY_ERROR, e.getMessage()));
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.DTO.LoginRequest;
-import com.example.demo.DTO.RegisterRequest;
-import com.example.demo.DTO.AuthResponse;
+import com.example.demo.dto.LoginRequest;
+import com.example.demo.dto.RegisterRequest;
+import com.example.demo.dto.AuthResponse;
 import com.example.demo.service.JwtService;
 import com.example.demo.service.UserService;
 import org.slf4j.Logger;

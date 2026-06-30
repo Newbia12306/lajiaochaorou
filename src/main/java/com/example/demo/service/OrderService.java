@@ -1,7 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.DTO.CreateOrderRequest;
-import com.example.demo.DTO.FrequentDishStats;
+import com.example.demo.constants.ApiConstants;
+import com.example.demo.dto.CreateOrderRequest;
+import com.example.demo.dto.FrequentDishStats;
 import com.example.demo.model.OrderRecord;
 import com.example.demo.repository.OrderRecordRepository;
 import org.springframework.data.domain.Page;
@@ -45,8 +46,8 @@ public class OrderService {
         orderRecordRepository.saveAll(records);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("message", "下单成功");
+        result.put(ApiConstants.KEY_SUCCESS, true);
+        result.put(ApiConstants.KEY_MESSAGE, "下单成功");
         result.put("orderId", orderId);
         result.put("totalItems", records.size());
         result.put("totalQuantity", totalQuantity);

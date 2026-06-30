@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.DTO.FrequentDishStats;
+import com.example.demo.dto.FrequentDishStats;
 import com.example.demo.model.Dish;
 import com.example.demo.repository.OrderRecordRepository;
 import dev.langchain4j.model.chat.ChatLanguageModel;

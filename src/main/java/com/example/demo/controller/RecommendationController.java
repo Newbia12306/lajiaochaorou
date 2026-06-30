@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.DTO.RecommendationResponse;
+import com.example.demo.constants.ApiConstants;
+import com.example.demo.dto.RecommendationResponse;
 import com.example.demo.service.RecommendationService;
 import com.example.demo.service.VectorSyncService;
 import org.slf4j.Logger;
@@ -58,18 +59,18 @@ public class RecommendationController {
     @PostMapping("/rebuild-index")
     public ResponseEntity<Map<String, Object>> rebuildIndex() {
         recommendationService.loadData();
-        return ResponseEntity.ok(Map.of("success", true, "message", "索引重建成功"));
+        return ResponseEntity.ok(Map.of(ApiConstants.KEY_SUCCESS, true, ApiConstants.KEY_MESSAGE, "索引重建成功"));
     }
 
     @PostMapping("/sync-vectors")
     public ResponseEntity<Map<String, Object>> syncVectors() {
         try {
             vectorSyncService.syncAllVectors();
-            return ResponseEntity.ok(Map.of("success", true, "message", "向量同步成功"));
+            return ResponseEntity.ok(Map.of(ApiConstants.KEY_SUCCESS, true, ApiConstants.KEY_MESSAGE, "向量同步成功"));
         } catch (Exception e) {
             log.error("Vector sync failed", e);
             return ResponseEntity.status(500).body(
-                    Map.of("success", false, "message", "向量同步失败: " + e.getMessage()));
+                    Map.of(ApiConstants.KEY_SUCCESS, false, ApiConstants.KEY_MESSAGE, "向量同步失败: " + e.getMessage()));
         }
     }
 }

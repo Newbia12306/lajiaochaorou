@@ -1,7 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.DTO.CreateOrderRequest;
-import com.example.demo.DTO.FrequentDishStats;
+import com.example.demo.constants.ApiConstants;
+import com.example.demo.dto.CreateOrderRequest;
+import com.example.demo.dto.FrequentDishStats;
 import com.example.demo.service.LlmService;
 import com.example.demo.service.OrderService;
 import org.slf4j.Logger;
@@ -32,11 +33,11 @@ public class OrderController {
             Map<String, Object> result = orderService.createOrder(request);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to create order", e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", true, "message", "下单失败: " + e.getMessage()));
+                    .body(Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "下单失败: " + e.getMessage()));
         }
     }
 
@@ -51,7 +52,7 @@ public class OrderController {
         } catch (Exception e) {
             log.error("Failed to get orders for userId={}", userId, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", true, "message", "查询订单失败: " + e.getMessage()));
+                    .body(Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "查询订单失败: " + e.getMessage()));
         }
     }
 
@@ -62,14 +63,14 @@ public class OrderController {
         try {
             List<FrequentDishStats> frequentDishes = orderService.getFrequentDishes(userId, limit);
             Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
+            result.put(ApiConstants.KEY_SUCCESS, true);
             result.put("userId", userId);
             result.put("frequentDishes", frequentDishes);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("Failed to get frequent dishes for userId={}", userId, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", true, "message", "查询常点菜品失败: " + e.getMessage()));
+                    .body(Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "查询常点菜品失败: " + e.getMessage()));
         }
     }
 
@@ -80,7 +81,7 @@ public class OrderController {
 
             if (userId == null || userId.isBlank()) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", true, "message", "用户ID不能为空"));
+                        .body(Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "用户ID不能为空"));
             }
 
             String recommendation = llmService.personalizedRecommend(userId);
@@ -88,7 +89,7 @@ public class OrderController {
             List<FrequentDishStats> frequentDishes = orderService.getFrequentDishes(userId, 5);
 
             Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
+            result.put(ApiConstants.KEY_SUCCESS, true);
             result.put("userId", userId);
             result.put("recommendation", recommendation);
             result.put("frequentDishes", frequentDishes);
@@ -96,7 +97,7 @@ public class OrderController {
         } catch (Exception e) {
             log.error("Failed to generate recommendations", e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", true, "message", "生成推荐失败: " + e.getMessage()));
+                    .body(Map.of(ApiConstants.KEY_ERROR, true, ApiConstants.KEY_MESSAGE, "生成推荐失败: " + e.getMessage()));
         }
     }
 }
