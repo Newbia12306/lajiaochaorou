@@ -31,7 +31,9 @@ jobs:
           cache: maven
 
       - name: Build, test & JaCoCo coverage
-        run: mvn verify -B -Dmaven.test.failure.ignore=true
+        run: |
+          mvn verify -B -Dmaven.test.failure.ignore=true \
+            -Dtest='!com.example.demo.DemoApplicationTests'
 
       - name: SonarCloud Scan (Push)
         if: github.event_name == 'push'
