@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Repository
-public interface DishRepository extends JpaRepository<Dish,Long> {
+public interface DishRepository extends JpaRepository<Dish, Long> {
     boolean existsByName(String name);
 
     @Query("SELECT d FROM Dish d ORDER BY " +
@@ -26,6 +26,8 @@ public interface DishRepository extends JpaRepository<Dish,Long> {
     List<Dish> findByIsDeletedFalse();
     
     List<Dish> findByIsSignatureTrueAndIsDeletedFalse();
+
+    List<Dish> findByNameContainingIgnoreCase(String name);
 
 }
 

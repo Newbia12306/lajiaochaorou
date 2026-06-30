@@ -11,6 +11,9 @@ import org.mockito.InjectMocks;
 import com.example.demo.repository.DishRepository;
 import com.example.demo.model.Dish;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +30,12 @@ public class DishServiceTest {
     @Mock
     private DishRepository dishRepository;
 
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
+
     @InjectMocks
     private DishService dishService;
 
@@ -35,11 +44,13 @@ public class DishServiceTest {
     @BeforeEach
     void setUp(){
         testDish = new Dish();
-        testDish.setId(1);
+        testDish.setId(1L);
         testDish.setName("辣椒炒肉");
         testDish.setSpicy(Dish.SpicyLevel.MEDIUM_SPICY);
         testDish.setIsSignature(true);
         testDish.setIsDeleted(false);
+
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
 
@@ -103,12 +114,22 @@ public class DishServiceTest {
     @Test
     void testDeleteDishes(){
         List<Long> ids = Arrays.asList(1L, 2L);
-        when(dishRepository.findById(anyLong())).thenReturn(Optional.of(testDish));
+        when(dishRepository.findAllById(ids)).thenReturn(Arrays.asList(testDish, createSecondDish()));
 
         dishService.deleteDishes(ids);
 
-        verify(dishRepository, times(ids.size())).findById(anyLong());
-        verify(dishRepository, times(ids.size())).save(any(Dish.class));
+        verify(dishRepository).findAllById(ids);
+        verify(dishRepository).saveAll(anyList());
+    }
+
+    private Dish createSecondDish() {
+        Dish dish = new Dish();
+        dish.setId(2L);
+        dish.setName("剁椒鱼头");
+        dish.setSpicy(Dish.SpicyLevel.EXTRA_SPICY);
+        dish.setIsSignature(false);
+        dish.setIsDeleted(false);
+        return dish;
     }
 
     @Test

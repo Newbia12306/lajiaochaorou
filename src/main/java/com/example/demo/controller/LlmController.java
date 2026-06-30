@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.LlmService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,11 +9,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/llm")
-@CrossOrigin(origins = "*")
 public class LlmController {
 
-    @Autowired
-    private LlmService llmService;
+    private final LlmService llmService;
+
+    public LlmController(LlmService llmService) {
+        this.llmService = llmService;
+    }
 
     @PostMapping("/chat")
     public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, String> request) {

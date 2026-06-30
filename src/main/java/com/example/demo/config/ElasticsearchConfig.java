@@ -1,6 +1,7 @@
 package com.example.demo.config;
 
-import org.apache.http.ssl.SSLContextBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
@@ -13,6 +14,8 @@ import javax.net.ssl.SSLContext;
 @EnableElasticsearchRepositories(basePackages = "com.example.demo.repository")
 public class ElasticsearchConfig extends ElasticsearchConfiguration {
 
+    private static final Logger log = LoggerFactory.getLogger(ElasticsearchConfig.class);
+
     @Value("${spring.elasticsearch.uris:http://localhost:9200}")
     private String elasticsearchUris;
 
@@ -24,47 +27,49 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
 
     @Override
     public ClientConfiguration clientConfiguration() {
+        String hostPort = elasticsearchUris
+                .replace("https://", "")
+                .replace("http://", "");
+
+        boolean useSsl = elasticsearchUris.startsWith("https://");
+        boolean useAuth = username != null && !username.isBlank()
+                && password != null && !password.isBlank();
+
+        // Builder uses a step-builder pattern; must branch on conditions
+        if (useSsl && useAuth) {
+            return ClientConfiguration.builder()
+                    .connectedTo(hostPort)
+                    .usingSsl(getDefaultSslContext())
+                    .withBasicAuth(username, password)
+                    .build();
+        } else if (useSsl) {
+            return ClientConfiguration.builder()
+                    .connectedTo(hostPort)
+                    .usingSsl(getDefaultSslContext())
+                    .build();
+        } else if (useAuth) {
+            return ClientConfiguration.builder()
+                    .connectedTo(hostPort)
+                    .withBasicAuth(username, password)
+                    .build();
+        } else {
+            return ClientConfiguration.builder()
+                    .connectedTo(hostPort)
+                    .build();
+        }
+    }
+
+    /**
+     * Use the JVM's default SSL context which validates certificates against
+     * the trusted CA store, instead of trusting all certificates blindly.
+     */
+    private SSLContext getDefaultSslContext() {
         try {
-            String hostPort = elasticsearchUris
-                    .replace("https://", "")
-                    .replace("http://", "");
-
-            boolean useSsl = elasticsearchUris.startsWith("https://");
-            boolean useAuth = username != null && !username.isBlank()
-                    && password != null && !password.isBlank();
-
-            SSLContext sslContext = null;
-            if (useSsl) {
-                sslContext = SSLContextBuilder.create()
-                        .loadTrustMaterial((chain, authType) -> true)
-                        .build();
-            }
-
-            // 由于 ClientConfiguration 使用 step-builder 模式，
-            // 必须根据条件走不同分支，无法用中间变量存储
-            if (useSsl && useAuth) {
-                return ClientConfiguration.builder()
-                        .connectedTo(hostPort)
-                        .usingSsl(sslContext)
-                        .withBasicAuth(username, password)
-                        .build();
-            } else if (useSsl) {
-                return ClientConfiguration.builder()
-                        .connectedTo(hostPort)
-                        .usingSsl(sslContext)
-                        .build();
-            } else if (useAuth) {
-                return ClientConfiguration.builder()
-                        .connectedTo(hostPort)
-                        .withBasicAuth(username, password)
-                        .build();
-            } else {
-                return ClientConfiguration.builder()
-                        .connectedTo(hostPort)
-                        .build();
-            }
+            return SSLContext.getDefault();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create Elasticsearch client configuration", e);
+            log.error("Failed to obtain default SSL context for Elasticsearch", e);
+            throw new IllegalStateException(
+                    "Failed to obtain default SSL context for Elasticsearch connection", e);
         }
     }
 }

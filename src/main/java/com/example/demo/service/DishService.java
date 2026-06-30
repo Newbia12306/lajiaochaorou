@@ -2,35 +2,35 @@ package com.example.demo.service;
 
 import com.example.demo.model.Dish;
 import com.example.demo.repository.DishRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Pageable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.Collections;
 
 @Service
 public class DishService {
 
-    @Autowired
-    private DishRepository dishRepository;
-
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
-
+    private static final Logger log = LoggerFactory.getLogger(DishService.class);
     private static final String SIGNATURE_DISHES_CACHE_KEY = "signature_dishes";
-    private static final long CACHE_EXPIRE_TIME = 30; // 缓存过期时间（分钟）
+    private static final long CACHE_EXPIRE_TIME = 30;
 
-    // 验证菜品名称
+    private final DishRepository dishRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public DishService(DishRepository dishRepository, RedisTemplate<String, Object> redisTemplate) {
+        this.dishRepository = dishRepository;
+        this.redisTemplate = redisTemplate;
+    }
+
     public void validateDishName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("菜品名称不能为空");
@@ -45,59 +45,56 @@ public class DishService {
         }
     }
 
-    public Dish createDish(String name,Dish.SpicyLevel spicy ,Boolean isSignature){
+    public Dish createDish(String name, Dish.SpicyLevel spicy, Boolean isSignature) {
         validateDishName(name);
         if (dishRepository.existsByName(name)) {
             throw new IllegalArgumentException("菜品已添加");
         }
         Dish dish = new Dish();
-
         dish.setName(name.trim());
         dish.setSpicy(spicy);
         dish.setIsSignature(isSignature != null ? isSignature : false);
 
         Dish savedDish = dishRepository.save(dish);
-        
+
         if (Boolean.TRUE.equals(isSignature)) {
             clearSignatureDishesCache();
         }
-        
+
         return savedDish;
     }
 
-    public List<Dish> getAllDishes(){
+    public List<Dish> getAllDishes() {
         return dishRepository.findByIsDeletedFalse();
     }
 
     /**
-     * 获取招牌菜列表（带缓存）
+     * Get signature dishes with Redis caching.
      */
     @SuppressWarnings("unchecked")
     public List<Dish> getSignatureDishes() {
-        // 先从缓存中获取
-        List<Dish> cachedDishes = (List<Dish>) redisTemplate.opsForValue().get(SIGNATURE_DISHES_CACHE_KEY);
-        if (cachedDishes != null) {
-            return cachedDishes;
+        Object cached = redisTemplate.opsForValue().get(SIGNATURE_DISHES_CACHE_KEY);
+        if (cached instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Dish) {
+            return (List<Dish>) list;
         }
 
-        // 缓存中没有，从数据库查询
         List<Dish> signatureDishes = dishRepository.findByIsSignatureTrueAndIsDeletedFalse();
-        
-        // 将结果存入缓存
+
         if (signatureDishes != null && !signatureDishes.isEmpty()) {
-            redisTemplate.opsForValue().set(SIGNATURE_DISHES_CACHE_KEY, signatureDishes, CACHE_EXPIRE_TIME, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(SIGNATURE_DISHES_CACHE_KEY, signatureDishes,
+                    CACHE_EXPIRE_TIME, TimeUnit.MINUTES);
         }
-        
+
         return signatureDishes != null ? signatureDishes : Collections.emptyList();
     }
 
-    public Map<String,Object> getDishesWithPagination(String sortType,int page,int size){
-        if(page < 1) page = 1;
-        if(size < 1) size = 10;
-        if(size > 100) size = 100;
+    public Map<String, Object> getDishesWithPagination(String sortType, int page, int size) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+        if (size > 100) size = 100;
 
         Page<Dish> dishPage;
-        Pageable pageable = PageRequest.of(page - 1 , size);
+        Pageable pageable = PageRequest.of(page - 1, size);
 
         switch (sortType) {
             case "spicy":
@@ -110,23 +107,23 @@ public class DishService {
                 dishPage = dishRepository.findAll(pageable);
                 break;
         }
-        Map<String,Object> response = new HashMap<>();
-        response.put("dishes",dishPage.getContent());
-        response.put("currentPage",page);
-        response.put("totalPages",dishPage.getTotalPages());
-        response.put("totalItems",dishPage.getTotalElements());
-        response.put("hasNext",dishPage.hasNext());
-        response.put("hasPrevious",dishPage.hasPrevious());
-        response.put("pageSize",size);
+        Map<String, Object> response = new HashMap<>();
+        response.put("dishes", dishPage.getContent());
+        response.put("currentPage", page);
+        response.put("totalPages", dishPage.getTotalPages());
+        response.put("totalItems", dishPage.getTotalElements());
+        response.put("hasNext", dishPage.hasNext());
+        response.put("hasPrevious", dishPage.hasPrevious());
+        response.put("pageSize", size);
 
         return response;
     }
 
-    public void deleteDish(Long id){
-        Dish dish = dishRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("菜品不存在"));
+    public void deleteDish(Long id) {
+        Dish dish = dishRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("菜品不存在"));
 
         boolean wasSignature = Boolean.TRUE.equals(dish.getIsSignature());
-
         dish.setIsDeleted(true);
         dishRepository.save(dish);
 
@@ -135,63 +132,73 @@ public class DishService {
         }
     }
 
-    public void deleteDishes(List<Long> ids){
+    /**
+     * Batch delete dishes - uses findAllById to avoid N+1 queries.
+     */
+    public void deleteDishes(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new IllegalArgumentException("没有选中可删除的菜品");
         }
-        
+
+        // Fix N+1: fetch all dishes in one query
+        List<Dish> dishes = dishRepository.findAllById(ids);
         boolean hasSignatureDish = false;
-        for(Long id : ids){
-            Dish dish = dishRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("菜品不存在"));
+
+        for (Dish dish : dishes) {
             if (Boolean.TRUE.equals(dish.getIsSignature())) {
                 hasSignatureDish = true;
             }
             dish.setIsDeleted(true);
-            dishRepository.save(dish);
         }
-        
+        dishRepository.saveAll(dishes);
+
         if (hasSignatureDish) {
             clearSignatureDishesCache();
         }
     }
-    
+
     public Dish getDishById(Long id) {
         return dishRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("菜品不存在，ID: " + id));
     }
-    
+
     public Dish updateDish(Long id, Dish dishDetails) {
         Dish dish = getDishById(id);
 
-        if (!dish.getName().equals(dishDetails.getName()) &&
-                dishRepository.existsByName(dishDetails.getName())) {
-            throw new RuntimeException("菜品名称已存在: " + dishDetails.getName());
+        if (dishDetails.getName() != null
+                && !dish.getName().equals(dishDetails.getName())
+                && dishRepository.existsByName(dishDetails.getName())) {
+            throw new IllegalArgumentException("菜品名称已存在: " + dishDetails.getName());
         }
 
-        boolean signatureChanged = !dish.getIsSignature().equals(dishDetails.getIsSignature());
+        boolean signatureChanged = dishDetails.getIsSignature() != null
+                && !dish.getIsSignature().equals(dishDetails.getIsSignature());
 
-        dish.setName(dishDetails.getName());
-        dish.setSpicy(dishDetails.getSpicy());
-        dish.setIsSignature(dishDetails.getIsSignature());
+        if (dishDetails.getName() != null) {
+            dish.setName(dishDetails.getName());
+        }
+        if (dishDetails.getSpicy() != null) {
+            dish.setSpicy(dishDetails.getSpicy());
+        }
+        if (dishDetails.getIsSignature() != null) {
+            dish.setIsSignature(dishDetails.getIsSignature());
+        }
 
         Dish updatedDish = dishRepository.save(dish);
-        
+
         if (signatureChanged) {
             clearSignatureDishesCache();
         }
-        
+
         return updatedDish;
     }
 
-    /**
-     * 清除招牌菜缓存
-     */
     private void clearSignatureDishesCache() {
         redisTemplate.delete(SIGNATURE_DISHES_CACHE_KEY);
     }
 
     /**
-     * 根据菜名模糊搜索（新增功能，未编写测试）
+     * Search dishes by name keyword with caching.
      */
     public List<Dish> searchByNameKeyword(String keyword) {
         if (keyword == null || keyword.isBlank()) {
@@ -199,13 +206,12 @@ public class DishService {
         }
         String cacheKey = "dish_search:" + keyword.toLowerCase();
         Object cached = redisTemplate.opsForValue().get(cacheKey);
-        if (cached instanceof List) {
+        if (cached instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Dish) {
             @SuppressWarnings("unchecked")
-            List<Dish> result = (List<Dish>) cached;
-            if (!result.isEmpty()) {
-                return result;
-            }
+            List<Dish> result = (List<Dish>) list;
+            return result;
         }
+
         List<Dish> dishes = dishRepository.findByNameContainingIgnoreCase(keyword);
         if (dishes != null && !dishes.isEmpty()) {
             redisTemplate.opsForValue().set(cacheKey, dishes, 10, TimeUnit.MINUTES);

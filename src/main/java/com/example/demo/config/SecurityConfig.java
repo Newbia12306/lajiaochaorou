@@ -68,19 +68,21 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 允许的源，可以根据需要设置具体的前端地址
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        // 或者指定具体域名：
-        // configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:8080"));
+        // Allowed origins - restrict to specific domains in production
+        // Using origin patterns for flexibility during development
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:[*]",
+                "https://*.yourdomain.com"));
 
-        // 允许的HTTP方法
+        // Allowed HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
-        // 允许的请求头
+        // Allowed request headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
-        // 允许携带凭证（如cookies）
-        configuration.setAllowCredentials(true);
+        // Credentials: set to false since JWT is passed via Authorization header, not cookies
+        // If cookies are needed, replace wildcard origins with explicit domains
+        configuration.setAllowCredentials(false);
 
         // 预检请求的缓存时间（秒）
         configuration.setMaxAge(3600L);
